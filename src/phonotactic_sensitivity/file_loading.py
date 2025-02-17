@@ -21,7 +21,8 @@ class Continuum:
         tg_B = tgt.io.read_textgrid(self._file_dir / f"{self.endpoint_A}-{self.endpoint_B}_cntnm_010.TextGrid")
 
         self.morph_interval = self._get_morph_interval(tg_A, tg_B)
-        self.steps = self._get_steps(self._file_dir / "steps")
+        self.morph_intervals = self._get_morph_intervals(self._file_dir / 'steps_f0_1' / 'textgrid')
+        self.steps = self._get_steps(self._file_dir / "steps_f0_1" / 'wav')
 
     def __str__(self):
         return pprint.pformat(self.__dict__, sort_dicts=False)
@@ -54,6 +55,25 @@ class Continuum:
             )
         )
         return morph_intv_union
+
+    def _get_morph_intervals(self, textgrids_dir: Path) -> list:
+        sorted_textgrid_files = [
+            textgrid_file
+            for idx, textgrid_file in sorted(
+                [(int(fp.name.split('_')[-1].split('.')[0]), fp) for fp in list(textgrids_dir.glob('*.TextGrid'))],
+                key=lambda x: x[0],
+            )
+        ]
+
+        intervals = [
+            (
+                float(tgt.io.read_textgrid(file).get_tier_by_name("morphtarget").get_annotations_with_text("X")[0].start_time),
+                float(tgt.io.read_textgrid(file).get_tier_by_name("morphtarget").get_annotations_with_text("X")[0].end_time)
+            )
+            for file in sorted_textgrid_files
+        ]
+
+        return intervals
 
     def _get_steps(self, steps_dir: Path) -> list:
         """

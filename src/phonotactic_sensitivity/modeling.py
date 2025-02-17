@@ -17,7 +17,7 @@ from transformers import (
 from phonotactic_sensitivity.paths import ROOT
 from phonotactic_sensitivity.settings import models
 
-
+# https://web.stanford.edu/~nanbhas/blog/forward-hooks-pytorch/#extracting-activations-from-a-layer
 class SaveOutput:
     def __init__(self):
         self.outputs = defaultdict()
@@ -130,6 +130,16 @@ class AudioModel:
         end_frame = int(np.ceil(end_time / frame_rate))
         return (start_frame, end_frame)
 
+    def interval_times_to_frames(self, intv_times: list[tuple[float, float]]):
+        def get_frames(start_time, end_time):
+            frame_rate = self.model.config.inputs_to_logits_ratio / self.feature_extractor.sampling_rate
+            start_frame = int(np.floor(start_time / frame_rate))
+            end_frame = int(np.ceil(end_time / frame_rate))
+            return start_frame, end_frame
+
+        frames = [get_frames(start_time, end_time) for (start_time, end_time) in intv_times]
+
+        return frames
 
 def mean_step_embeddings(step_activations, from_frame: int = 0, to_frame: int = -1):
     step_embeddings = {}
@@ -138,4 +148,19 @@ def mean_step_embeddings(step_activations, from_frame: int = 0, to_frame: int = 
             step_embeddings[layer] = step_activations[layer][:, :, from_frame:to_frame].mean(axis=2)
         else:
             step_embeddings[layer] = step_activations[layer][:, from_frame:to_frame, :].mean(axis=1)
+    return step_embeddings
+
+def mean_step_embeddings_frames(step_activations, frames):
+    step_embeddings = {}
+
+    for layer in step_activations.keys():
+        if layer == 'CNN':
+            mean_embedding = [step_activations[layer][:, :, frames[step][0]:frames[step][1]].mean(axis=2) for step in
+                              range(step_activations[layer].shape[0])]
+        else:
+            mean_embedding = [step_activations[layer][:, frames[step][0]:frames[step][1], :].mean(axis=1) for step in
+                              range(step_activations[layer].shape[0])]
+
+        step_embeddings[layer] = np.stack(mean_embedding, axis=0)
+
     return step_embeddings

@@ -6,7 +6,7 @@ from pathlib import Path
 from phonotactic_sensitivity.paths import ROOT
 from phonotactic_sensitivity.settings import models, voices, seed
 from phonotactic_sensitivity.file_loading import load_continua
-from phonotactic_sensitivity.modeling import AudioModel, mean_step_embeddings
+from phonotactic_sensitivity.modeling import AudioModel, mean_step_embeddings, mean_step_embeddings_frames
 from phonotactic_sensitivity.measures import EmbeddingSimilarity, CTCLens, ProbeProbability
 
 torch.manual_seed(seed)
@@ -22,6 +22,10 @@ ctcprob_dir.mkdir(parents=True, exist_ok=True)
 pcprob_dir.mkdir(parents=True, exist_ok=True)
 
 for model_name in models.keys():
+
+    if model_name == 'w2v2_base_pret-acs':
+        continue
+
     model = AudioModel(model_name)
 
     if "base" in model_name:
@@ -36,21 +40,26 @@ for model_name in models.keys():
     pcprobs = []
 
     for voice in voices.keys():
-
         for continuum_name in continua[voice].keys():
-
             continuum = continua[voice][continuum_name]
             step_activations = model.get_activations(continuum.steps, continuum._samp_freq)
-            morph_start_frame, morph_end_frame = model.intv_times_to_frames(continuum.morph_interval)
-            step_embeddings = mean_step_embeddings(
-                step_activations, from_frame=morph_start_frame, to_frame=morph_end_frame
-            )
+            #morph_start_frame, morph_end_frame = model.intv_times_to_frames(continuum.morph_interval)
+
+            morph_frames = model.interval_times_to_frames(continuum.morph_intervals)
+
+            # step_embeddings = mean_step_embeddings(
+            #     step_activations, from_frame=morph_start_frame, to_frame=morph_end_frame
+            # )
+
+            step_embeddings = mean_step_embeddings_frames(step_activations, morph_frames)
+
             embsim = EmbeddingSimilarity()
             embsim_df = embsim.compute(step_embeddings).to_df()
             ctclens = CTCLens(*ctc_components)
             ctcprob_df = (
                 ctclens.compute_logits(step_activations)
-                .to_token_probs(from_frame=morph_start_frame, to_frame=morph_end_frame)
+                .to_token_probs_frames(morph_frames)
+                #.to_token_probs(from_frame=morph_start_frame, to_frame=morph_end_frame)
                 .to_df()
             )
             pcprob = ProbeProbability(ROOT / f'models/probing_classifiers/lr-{model_name}.pkl')

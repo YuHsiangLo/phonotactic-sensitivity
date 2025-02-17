@@ -81,6 +81,31 @@ class CTCLens:
         self._token_prob_dicts = token_prob_dicts
         return self
 
+    def to_token_probs_frames(self, frames, tokenA: str = 'B', tokenB: str = 'P'):
+        assert (
+            self._logit_dict != None
+        ), "no computed logits found; use .compute_logits() before using .to_token_probs()"
+
+        tokenA_idx = self.tokenizer.vocab[tokenA]
+        tokenB_idx = self.tokenizer.vocab[tokenB]
+
+        token_prob_dicts = []
+        for l, step_logits in self._logit_dict.items():
+            step_probs = [logits.softmax(dim=-1) for logits in step_logits]
+            tokenA_probs = [torch.max(probs[frames[i][0]:frames[i][1], tokenA_idx]).detach().numpy() for i, probs in enumerate(step_probs)]
+            tokenB_probs = [torch.max(probs[frames[i][0]:frames[i][1], tokenB_idx]).detach().numpy() for i, probs in enumerate(step_probs)]
+            N_scores = len(tokenA_probs) + len(tokenB_probs)
+            token_prob_dict = {
+                'measure': ['ctc_probability'] * N_scores,
+                'layer': [l] * N_scores,
+                'token': [tokenA] * len(tokenA_probs) + [tokenB] * len(tokenB_probs),
+                'step': list(range(len(tokenA_probs))) + list(range(len(tokenB_probs))),
+                'score': np.concatenate([tokenA_probs, tokenB_probs]),
+            }
+            token_prob_dicts.append(token_prob_dict)
+        self._token_prob_dicts = token_prob_dicts
+        return self
+
     def to_transcriptions(self, layer='T12'):
         assert (
             self._logit_dict != None

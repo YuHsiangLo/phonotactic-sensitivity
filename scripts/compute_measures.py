@@ -41,16 +41,18 @@ for model_name in models.keys():
 
     for voice in voices.keys():
         for continuum_name in continua[voice].keys():
+            if voice != 'A' or continuum_name != 'lih-rih':
+                continue
+
+            print(voice, continuum_name)
+
             continuum = continua[voice][continuum_name]
             step_activations = model.get_activations(continuum.steps, continuum._samp_freq)
             #morph_start_frame, morph_end_frame = model.intv_times_to_frames(continuum.morph_interval)
 
             morph_frames = model.interval_times_to_frames(continuum.morph_intervals)
-
-            # step_embeddings = mean_step_embeddings(
-            #     step_activations, from_frame=morph_start_frame, to_frame=morph_end_frame
-            # )
-
+            print(f'{morph_frames=}')
+            #step_embeddings = mean_step_embeddings(step_activations, from_frame=0, to_frame=-1)
             step_embeddings = mean_step_embeddings_frames(step_activations, morph_frames)
 
             embsim = EmbeddingSimilarity()

@@ -155,11 +155,15 @@ def mean_step_embeddings_frames(step_activations, frames):
 
     for layer in step_activations.keys():
         if layer == 'CNN':
-            mean_embedding = [step_activations[layer][:, :, frames[step][0]:frames[step][1]].mean(axis=2) for step in
-                              range(step_activations[layer].shape[0])]
+            mean_embedding = [
+                step_activations[layer][step, :, frames[step][0]:frames[step][1]].mean(axis=1)
+                for step in range(step_activations[layer].shape[0])
+            ]
         else:
-            mean_embedding = [step_activations[layer][:, frames[step][0]:frames[step][1], :].mean(axis=1) for step in
-                              range(step_activations[layer].shape[0])]
+            mean_embedding = [
+                step_activations[layer][step, frames[step][0]:frames[step][1], :].mean(axis=0)
+                for step in range(step_activations[layer].shape[0])
+            ]
 
         step_embeddings[layer] = np.stack(mean_embedding, axis=0)
 

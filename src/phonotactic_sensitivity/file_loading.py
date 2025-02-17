@@ -21,8 +21,8 @@ class Continuum:
         tg_B = tgt.io.read_textgrid(self._file_dir / f"{self.endpoint_A}-{self.endpoint_B}_cntnm_010.TextGrid")
 
         self.morph_interval = self._get_morph_interval(tg_A, tg_B)
-        self.morph_intervals = self._get_morph_intervals(self._file_dir / 'steps_f0_1' / 'textgrid')
-        self.steps = self._get_steps(self._file_dir / "steps_f0_1" / 'wav')
+        self.morph_intervals = self._get_morph_intervals(self._file_dir / 'steps_f0_4' / 'textgrid')
+        self.steps = self._get_steps(self._file_dir / "steps_f0_4" / 'wav')
 
     def __str__(self):
         return pprint.pformat(self.__dict__, sort_dicts=False)

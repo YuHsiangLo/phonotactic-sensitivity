@@ -32,6 +32,8 @@ for model_name in models.keys():
         ctc_components = AudioModel("w2v2_base_ft").ctc_components
     elif "large" in model_name:
         ctc_components = AudioModel("w2v2_large_ft").ctc_components
+    elif 'xlsr' in model_name:
+        ctc_components = AudioModel("w2v2_xlsr_ft").ctc_components
     else:
         raise NotImplementedError
 

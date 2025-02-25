@@ -41,6 +41,7 @@ class AudioModel:
         "w2v2_large_unt",
         "w2v2_large_pret-sp",
         "w2v2_large_ft",
+        "wav2vec2-xlsr-53-espeak-cv-ft"
     ]
 
     def __init__(self, model_identifier: str, debug=False):
